@@ -108,7 +108,7 @@ streamlit run app.py
 
 ### 应用截图 (Screenshot)
 
-![Android App Screenshot](https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Android%20smartphone%20screen%20showing%20a%20fund%20NAV%20estimator%20app%20interface%20with%20purple%20top%20bar%2C%20title%20%22%E5%9F%BA%E9%87%91%E5%87%80%E5%80%BC%E4%BC%B0%E8%AE%A1%22%2C%20refresh%20button%2C%20table%20with%20fund%20list%20showing%20fund%20name%2Fcode%2C%20daily%20change%2Fprofit%2C%20holding%20amount%2C%20and%20operation%20columns%2C%20two%20fund%20entries%20with%20red%20and%20green%20text%20for%20price%20changes%2C%20purple%20add%20button%20at%20bottom%2C%20realistic%20mobile%20interface%20design&image_size=portrait_16_9)
+<img src="images/20260206174652_8_1.jpg" alt="Android App Screenshot" width="500" style="display: block; margin: 0 auto;">
 
 ### 构建与打包步骤 (Build & Package)
 
