@@ -193,18 +193,12 @@ class FundApiService {
                         // 搜索ETF代码
                         val targetCode = searchEtfCode(targetName)
                         if (targetCode != null && targetCode != fundCode) {
-                            // 尝试获取目标ETF的持仓数据
-                            val etfHoldingsResponse = getFundHoldings(targetCode)
-                            if (etfHoldingsResponse != null && etfHoldingsResponse.holdings.isNotEmpty()) {
-                                // 返回目标ETF的持仓数据
-                                return FundHoldingsResponse(finalFundName, etfHoldingsResponse.holdings, "实时追踪")
-                            } else {
-                                // 如果获取目标ETF的持仓数据失败，使用ETF本身作为持仓
-                                val etfFetchCode = if (targetCode.startsWith('5')) "sh$targetCode" else "sz$targetCode"
-                                val etfHoldings = mutableListOf<Holding>()
-                                etfHoldings.add(Holding(targetCode, targetName, 95.0, etfFetchCode))
-                                return FundHoldingsResponse(finalFundName, etfHoldings, "实时追踪")
-                            }
+                            // 直接使用ETF本身作为持仓，而不是尝试获取其持仓数据
+                            // 这样可以避免无限递归和其他问题
+                            val etfFetchCode = if (targetCode.startsWith('5')) "sh$targetCode" else "sz$targetCode"
+                            val etfHoldings = mutableListOf<Holding>()
+                            etfHoldings.add(Holding(targetCode, targetName, 95.0, etfFetchCode))
+                            return FundHoldingsResponse(finalFundName, etfHoldings, "实时追踪")
                         }
                     }
                 }
