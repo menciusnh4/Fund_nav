@@ -90,8 +90,21 @@ class FundApiService {
                 }
             }
 
+            // 如果基金名称缺失，尝试备份获取
+            var finalFundName = fundName
+            if (finalFundName == "基金名称未知") {
+                val backupName = getFundNameBackup(fundCode)
+                if (backupName != null) {
+                    finalFundName = backupName
+                }
+            }
+
+            // 检查是否为ETF联接基金
+            val isFeederNamed = finalFundName.contains("联接") || finalFundName.contains("ETF")
+
+            // 解析持仓数据
+            val holdings = mutableListOf<Holding>()
             if (htmlTable.isNotEmpty() && "暂无数据" !in htmlTable && htmlTable.length > 50) {
-                val holdings = mutableListOf<Holding>()
                 val rowsPattern = Regex("<tr>(.*?)</tr>", RegexOption.DOT_MATCHES_ALL)
                 val rows = rowsPattern.findAll(htmlTable)
 
@@ -146,65 +159,53 @@ class FundApiService {
                         continue
                     }
                 }
-
-                // 如果基金名称缺失，尝试备份获取
-                var finalFundName = fundName
-                if (finalFundName == "基金名称未知") {
-                    val backupName = getFundNameBackup(fundCode)
-                    if (backupName != null) {
-                        finalFundName = backupName
-                    }
-                }
-
-                // 检查是否为ETF联接基金
-                val isFeederNamed = finalFundName.contains("联接") || finalFundName.contains("ETF")
-
-                // 计算持仓权重总和
-                val totalWeight = holdings.sumOf { it.weight }
-                val isAbnormalHighWeight = totalWeight > 100.0 // 数据问题指标
-                val isSuspiciousLowWeight = totalWeight < 60.0 // 严格检查
-
-                if (holdings.isEmpty() || (isAbnormalHighWeight && isFeederNamed) || (isSuspiciousLowWeight && isFeederNamed)) {
-                    if (isFeederNamed) {
-                        // 尝试找到目标ETF
-                        var targetName = finalFundName
-
-                        // 1. 移除公司前缀
-                        val commonPrefixes = listOf("南方", "华夏", "博时", "易方达", "嘉实", "富国", "广发", "汇添富", "招商", "工银", "中欧", "天弘", "华安", "鹏华", "国泰", "华宝", "银华", "大成", "景顺长城")
-                        for (prefix in commonPrefixes) {
-                            if (targetName.startsWith(prefix)) {
-                                targetName = targetName.substring(prefix.length)
-                                break
-                            }
-                        }
-
-                        // 2. 移除类型/类别信息
-                        targetName = targetName.replace("发起式", "")
-                        targetName = targetName.replace("（QDII）", "").replace("(QDII)", "")
-                        targetName = targetName.replace("人民币", "").replace("美元", "")
-
-                        // 3. 移除"联接"后缀
-                        targetName = targetName.replace(Regex("联接[A-Z]?$"), "")
-                        targetName = targetName.replace("联接", "")
-
-                        // 4. 移除类别后缀
-                        targetName = targetName.replace(Regex("[A-E]$", RegexOption.IGNORE_CASE), "")
-
-                        // 搜索ETF代码
-                        val targetCode = searchEtfCode(targetName)
-                        if (targetCode != null && targetCode != fundCode) {
-                            // 直接使用ETF本身作为持仓，而不是尝试获取其持仓数据
-                            // 这样可以避免无限递归和其他问题
-                            val etfFetchCode = if (targetCode.startsWith('5')) "sh$targetCode" else "sz$targetCode"
-                            val etfHoldings = mutableListOf<Holding>()
-                            etfHoldings.add(Holding(targetCode, targetName, 95.0, etfFetchCode))
-                            return FundHoldingsResponse(finalFundName, etfHoldings, "实时追踪")
-                        }
-                    }
-                }
-
-                return FundHoldingsResponse(finalFundName, holdings, reportDate)
             }
+
+            // 计算持仓权重总和
+            val totalWeight = holdings.sumOf { it.weight }
+            val isAbnormalHighWeight = totalWeight > 100.0 // 数据问题指标
+            val isSuspiciousLowWeight = totalWeight < 60.0 // 严格检查
+
+            if (holdings.isEmpty() || (isAbnormalHighWeight && isFeederNamed) || (isSuspiciousLowWeight && isFeederNamed)) {
+                if (isFeederNamed) {
+                    // 尝试找到目标ETF
+                    var targetName = finalFundName
+
+                    // 1. 移除公司前缀
+                    val commonPrefixes = listOf("南方", "华夏", "博时", "易方达", "嘉实", "富国", "广发", "汇添富", "招商", "工银", "中欧", "天弘", "华安", "鹏华", "国泰", "华宝", "银华", "大成", "景顺长城")
+                    for (prefix in commonPrefixes) {
+                        if (targetName.startsWith(prefix)) {
+                            targetName = targetName.substring(prefix.length)
+                            break
+                        }
+                    }
+
+                    // 2. 移除类型/类别信息
+                    targetName = targetName.replace("发起式", "")
+                    targetName = targetName.replace("（QDII）", "").replace("(QDII)", "")
+                    targetName = targetName.replace("人民币", "").replace("美元", "")
+
+                    // 3. 移除"联接"后缀
+                    targetName = targetName.replace(Regex("联接[A-Z]?$"), "")
+                    targetName = targetName.replace("联接", "")
+
+                    // 4. 移除类别后缀
+                    targetName = targetName.replace(Regex("[A-E]$", RegexOption.IGNORE_CASE), "")
+
+                    // 搜索ETF代码
+                    val targetCode = searchEtfCode(targetName)
+                    if (targetCode != null && targetCode != fundCode) {
+                        // 直接使用ETF本身作为持仓，而不是尝试获取其持仓数据
+                        // 这样可以避免无限递归和其他问题
+                        val etfFetchCode = if (targetCode.startsWith('5')) "sh$targetCode" else "sz$targetCode"
+                        val etfHoldings = mutableListOf<Holding>()
+                        etfHoldings.add(Holding(targetCode, targetName, 95.0, etfFetchCode))
+                        return FundHoldingsResponse(finalFundName, etfHoldings, "实时追踪")
+                    }
+                }
+            }
+
+            return FundHoldingsResponse(finalFundName, holdings, reportDate)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -242,9 +243,11 @@ class FundApiService {
     // 搜索ETF代码
     private fun searchEtfCode(etfName: String): String? {
         try {
-            val url = "http://suggest3.sinajs.cn/suggest/type=&key=$etfName"
+            val encodedName = java.net.URLEncoder.encode(etfName, "UTF-8")
+            val url = "http://suggest3.sinajs.cn/suggest/type=&key=$encodedName"
             val request = Request.Builder()
                 .url(url)
+                .header("User-Agent", "Mozilla/5.0")
                 .build()
 
             val response: Response = okHttpClient.newCall(request).execute()
