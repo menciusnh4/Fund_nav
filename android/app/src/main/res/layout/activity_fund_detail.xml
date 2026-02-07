@@ -197,12 +197,71 @@
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
-                    <ListView
-                        android:id="@+id/holdingsListView"
+                    <!-- Holdings Table Header -->
+                    <LinearLayout
+                        android:id="@+id/holdingsTableHeader"
                         android:layout_width="match_parent"
-                        android:layout_height="200dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
                         android:layout_marginTop="16dp"
-                        app:layout_constraintTop_toBottomOf="@+id/holdingsTitle" />
+                        android:background="@drawable/table_border"
+                        android:divider="@drawable/table_divider"
+                        android:showDividers="middle"
+                        android:padding="12dp"
+                        app:layout_constraintTop_toBottomOf="@+id/holdingsTitle">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="代码"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:text="名称"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="权重(%)"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="现价"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="涨跌(%)"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/holdingsRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp"
+                        android:layout_marginTop="4dp"
+                        android:scrollbars="vertical"
+                        app:layout_constraintTop_toBottomOf="@+id/holdingsTableHeader" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 

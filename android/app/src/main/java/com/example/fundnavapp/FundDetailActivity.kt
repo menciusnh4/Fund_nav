@@ -1,8 +1,14 @@
 package com.example.fundnavapp
 
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -32,7 +38,7 @@ class FundDetailActivity : AppCompatActivity() {
     private lateinit var reportDateTextView: android.widget.TextView
     private lateinit var navUpdateTimeTextView: android.widget.TextView
     private lateinit var loadingProgressBar: android.widget.ProgressBar
-    private lateinit var holdingsListView: android.widget.ListView
+    private lateinit var holdingsRecyclerView: RecyclerView
     private lateinit var navTrendChart: LineChart
     private lateinit var realtimeChart: LineChart
     private lateinit var refreshButton: android.widget.Button
@@ -60,7 +66,8 @@ class FundDetailActivity : AppCompatActivity() {
         reportDateTextView = findViewById(R.id.reportDateTextView)
         navUpdateTimeTextView = findViewById(R.id.navUpdateTimeTextView)
         loadingProgressBar = findViewById(R.id.loadingProgressBar)
-        holdingsListView = findViewById(R.id.holdingsListView)
+        holdingsRecyclerView = findViewById(R.id.holdingsRecyclerView)
+        holdingsRecyclerView.layoutManager = LinearLayoutManager(this@FundDetailActivity)
         navTrendChart = findViewById(R.id.navTrendChart)
         realtimeChart = findViewById(R.id.realtimeChart)
         refreshButton = findViewById(R.id.refreshButton)
@@ -113,9 +120,7 @@ class FundDetailActivity : AppCompatActivity() {
                     val estimatedNav = 1.2 * (1 + estimatedChange / 100) // 基础净值1.2
 
                     // 准备持仓详情数据
-                    val holdings = estimation.details.map {
-                        "${it.name}: ${String.format("%.2f", it.weight)}%"
-                    }
+                    val holdingsDetails = estimation.details
 
                     // 模拟净值趋势数据
                     val navEntries = mutableListOf<Entry>()
@@ -151,11 +156,7 @@ class FundDetailActivity : AppCompatActivity() {
                         )
 
                         // Update holdings list
-                        holdingsListView.adapter = android.widget.ArrayAdapter(
-                            this@FundDetailActivity,
-                            android.R.layout.simple_list_item_1,
-                            holdings
-                        )
+                        holdingsRecyclerView.adapter = HoldingsAdapter(holdingsDetails)
 
                         // Setup nav trend chart
                         setupChart(navTrendChart, navEntries, "净值趋势")
@@ -196,5 +197,42 @@ class FundDetailActivity : AppCompatActivity() {
         val legend = chart.legend
         legend.setDrawInside(false)
         chart.animateXY(1000, 1000)
+    }
+
+    class HoldingsAdapter(private val holdings: List<FundApiService.HoldingDetail>) : RecyclerView.Adapter<HoldingsAdapter.ViewHolder>() {
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val codeTextView: TextView = view.findViewById(R.id.codeTextView)
+            val nameTextView: TextView = view.findViewById(R.id.nameTextView)
+            val weightTextView: TextView = view.findViewById(R.id.weightTextView)
+            val priceTextView: TextView = view.findViewById(R.id.priceTextView)
+            val changeTextView: TextView = view.findViewById(R.id.changeTextView)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_holding, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val holding = holdings[position]
+            holder.codeTextView.text = holding.code
+            holder.nameTextView.text = holding.name
+            holder.weightTextView.text = String.format("%.2f%%", holding.weight)
+            holder.priceTextView.text = String.format("%.2f", holding.price)
+            holder.changeTextView.text = String.format("%.2f%%", holding.change)
+
+            // Set change text color
+            holder.changeTextView.setTextColor(
+                if (holding.change >= 0) {
+                    holder.itemView.context.getColor(R.color.red)
+                } else {
+                    holder.itemView.context.getColor(R.color.green)
+                }
+            )
+        }
+
+        override fun getItemCount(): Int {
+            return holdings.size
+        }
     }
 }
